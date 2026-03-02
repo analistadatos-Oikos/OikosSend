@@ -1,0 +1,89 @@
+name: 🤖 OikosSend - Envío WhatsApp Automático
+
+on:
+  workflow_dispatch:
+    inputs:
+      tipo:
+        description: 'Tipo de mensaje'
+        required: true
+        default: 'Inicial'
+        type: choice
+        options:
+          - Inicial
+          - Seguimiento1
+      contactos:
+        description: 'Contactos (JSON)'
+        required: true
+      plantilla:
+        description: 'Plantilla del mensaje'
+        required: true
+      adjunto:
+        description: 'URL del adjunto'
+        required: false
+      spreadsheet_id:
+        description: 'ID de Google Sheets'
+        required: true
+  schedule:
+    # Programación: 9am, 2pm, 6pm (hora Colombia)
+    - cron: '0 14,19,23 * * 1-5'
+
+jobs:
+  enviar-whatsapp:
+    name: 📤 Enviando mensajes Oikos
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: 📥 Clonar repositorio
+        uses: actions/checkout@v3
+      
+      - name: 🐍 Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+      
+      - name: 📦 Instalar dependencias
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          
+      - name: 🌐 Instalar Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y chromium-browser chromium-chromedriver
+          
+      - name: 🔐 Configurar credenciales
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          WHATSAPP_SESSION: ${{ secrets.WHATSAPP_SESSION }}
+        run: |
+          echo "$GOOGLE_CREDENTIALS" > credentials.json
+          echo "$WHATSAPP_SESSION" | base64 -d > session.pkl 2>/dev/null || echo "⚠️ No hay sesión guardada"
+      
+      - name: 🚀 Ejecutar OikosSend
+        env:
+          TIPO_MENSAJE: ${{ github.event.inputs.tipo || 'Inicial' }}
+          CONTACTOS_JSON: ${{ github.event.inputs.contactos }}
+          PLANTILLA: ${{ github.event.inputs.plantilla }}
+          ADJUNTO: ${{ github.event.inputs.adjunto }}
+          SPREADSHEET_ID: ${{ github.event.inputs.spreadsheet_id || secrets.SPREADSHEET_ID }}
+        run: |
+          python src/whatsapp_bot.py
+      
+      - name: 💾 Guardar sesión actualizada
+        run: |
+          if [ -f session.pkl ]; then
+            echo "Sesión guardada, actualizando secret..."
+            echo "WHATSAPP_SESSION=$(base64 -w 0 session.pkl)" >> $GITHUB_ENV
+          fi
+      
+      - name: 📤 Subir logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: logs-oikossend
+          path: |
+            *.log
+            session.pkl
+          retention-days: 7
