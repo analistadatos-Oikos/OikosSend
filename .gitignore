@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pythonenv.*
+
+# Credenciales y sesiones (¡MUY IMPORTANTE!)
+credentials.json
+*.pkl
+*.log
+sessions/
+*.session
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Archivos temporales
+tmp/
+temp/
+*.tmp
+*.bak
+*.cache
+*.pid
+*.lock
+
+# Logs
+*.log
+logs/
+
+# Archivos de entorno
+.env
+.env.local
+.env.*
+
+# Archivos de prueba
+test/
+tests/
+*.test.py
+
+# Archivos de sistema
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Archivos de GitHub
+*.diff
+*.patch
